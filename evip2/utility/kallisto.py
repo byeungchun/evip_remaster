@@ -40,8 +40,3 @@ def calculate_tpm_zscore(df:pd.DataFrame)-> pd.DataFrame:
     """ calculate z-score values of tpm log2 dataframe """
 
     return df.apply(lambda x: (x - df.mean(axis=1)) / df.std(axis=1)).fillna(0.0)
-
-def calculate_corr_sample(df:pd.DataFrame)->pd.DataFrame:
-    """ calculate correlation of RNA samples """
-
-    return df.corr()

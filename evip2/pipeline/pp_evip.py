@@ -7,9 +7,9 @@ from evip2.utility.kallisto import (
     concat_tpm_from_abundance,
     sum_tpm_by_gene_name,
     calculate_tpm_log2,
-    calculate_tpm_zscore,
-    calculate_corr_sample
+    calculate_tpm_zscore
 )
+from evip2.utility.evip import calculate_corr_sample
 
 def main(
     sigfile:str,
