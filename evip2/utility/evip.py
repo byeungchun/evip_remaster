@@ -15,23 +15,24 @@ def calculate_corr_sample(df:pd.DataFrame)->pd.DataFrame:
 
     return df.corr()
 
-def compare_functional_impact(df:pd.DataFrame, sig_id:dict)->pd.DataFrame:
-    """ compare WT and mutant functional impact using cell correlation 
+def calculate_null_distribution(df: pd.DataFrame, sig_id:dict)->dict:
+    """ eVIP getNullDist function """
 
-    Args:
-        df: correlation table of cells
-        sig_id: signature id dict - [cell type]:[sig id]
+    rand_gfp = 'GFP_4'
+    base_gfp = 'GFP_1'
 
-    Returns:
-        DataFrame:
-    """
+    #STEP1: Control cell - MT, WT distribution
+    conn_null_dist = list()
+    for _cell in sig_id.keys() - ['GFP']:
+        conn_null_dist.append(np.percentile(df.loc[rand_gfp, df.columns.str.contains(_cell)], 50))
+    
+    #STEP2: Control cell distribution
+    rep_null_dist = list()
+    gfp_cols = [x for x in df.columns if x.startswith('GFP') and x != base_gfp]
+    for _ in range(len(sig_id.keys() - ['GFP'])):
+        gfp_vals = df.loc[df.index.str.contains(base_gfp), gfp_cols].stack().values
+        rep_null_dist.append(np.percentile(gfp_vals,50))
+    
+    return rep_null_dist, conn_null_dist
 
-    for key, val in sig_id.items():
-        if val == 'MT':
-            df_mt = df.loc[[True if x.find(key)>=0 else False for x in df.index],:].T
-            df_mt = df_mt.loc[[True if x.find(key)>=0 else False for x in df_mt.index],:]
-            np.fill_diagonal(df_mt.values, None)
-            pct50_all = np.percentile(df_mt.stack().values, 50)
-            pct50_exp = list(df_mt.apply(lambda x: np.percentile(x.dropna(), 50)))
-            
-            #TODO: getPairwiseComparisons
+
