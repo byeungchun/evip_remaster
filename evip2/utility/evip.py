@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+from scipy.stats import wilcoxon
 
 def calculate_corr_sample(df:pd.DataFrame)->pd.DataFrame:
     """ calculate correlation of RNA samples 
@@ -36,3 +37,19 @@ def calculate_null_distribution(df: pd.DataFrame, sig_id:dict)->dict:
     return rep_null_dist, conn_null_dist
 
 
+def calculate_wildtype_distribution(df: pd.DataFrame, rep_null_dist:list, wt_name:str='RNF43_WT')->dict:
+    """ eVIP buildWT_dict """
+
+    df_wt = df.loc[[x.startswith(wt_name) for x in df.index],[x.startswith(wt_name) for x in df.columns]]
+    np.fill_diagonal(df_wt.values, np.nan)
+
+    rep_rankpts = df_wt.apply(lambda x: np.percentile(x.dropna().values, 50), axis=1).values
+    wt_rep_rankpt = np.percentile(rep_rankpts, 50)
+
+    wt_rep_pval = wilcoxon(rep_rankpts, [rep_null_dist[0] for _ in rep_rankpts]).pvalue
+
+    ret1 = {wt_name: {'wt_rep': wt_rep_rankpt, 'wt_rep_dist': rep_rankpts, 'wt_rep_pval':wt_rep_pval}}
+    ret2 = [wt_rep_pval]
+    ret3 = [wt_name]
+
+    return ret1, ret2, ret3
