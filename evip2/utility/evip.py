@@ -89,8 +89,14 @@ def calculate_wt_mt_comparison(df: pd.DataFrame, rep_null_dist:list, conn_null_d
 
         ##TODO: check return values, implement corrected pvalue calculation
 
+    ret_val = {
+        'mut_rep_pvals': mut_rep_pvals,
+        'mut_wt_conn_pvals': mut_wt_conn_pvals,
+        'mut_wt_rep_pvals': mut_wt_rep_pvals,
+        'wt_mut_rep_vs_wt_mut_conn_pvals':wt_mut_rep_vs_wt_mut_conn_pvals
+    }
 
-    return mut_rep_pvals, mut_wt_conn_pvals, mut_wt_rep_pvals, wt_mut_rep_vs_wt_mut_conn_pvals
+    return ret_val
 
 def _calculate_self_connectivity(df:pd.DataFrame)->list:
     """ get median values """
