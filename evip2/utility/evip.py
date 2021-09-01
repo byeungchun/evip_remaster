@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import wilcoxon, kruskal
+from statsmodels.stats.multitest import multipletests
 
 def calculate_corr_sample(df:pd.DataFrame)->pd.DataFrame:
     """ calculate correlation of RNA samples 
@@ -89,16 +90,28 @@ def calculate_wt_mt_comparison(df: pd.DataFrame, rep_null_dist:list, conn_null_d
         wt_mut_rep_vs_wt_mut_conn_pval = kruskal(wt_dict[wt_name]['wt_rep_dist'], mut_rankpt_dist, mut_wt_conn_dist).pvalue
         wt_mut_rep_vs_wt_mut_conn_pvals.append(wt_mut_rep_vs_wt_mut_conn_pval)
 
-        ##TODO: check return values, implement corrected pvalue calculation
+        #STEP5: calculate corrected pvalues
+        mut_wt_rep_c_pvals = multipletests(mut_wt_rep_pvals, method='fdr_bh')
+        mut_wt_conn_c_pvals = multipletests(mut_wt_conn_pvals, method='fdr_bh')
+        mut_wt_rep_vs_wt_mut_conn_c_pvals = multipletests(mut_wt_rep_vs_wt_mut_conn_pvals, method='fdr_bh')
+
 
     ret_val = {
         'mut_rep_pvals': mut_rep_pvals,
         'mut_wt_conn_pvals': mut_wt_conn_pvals,
         'mut_wt_rep_pvals': mut_wt_rep_pvals,
-        'wt_mut_rep_vs_wt_mut_conn_pvals':wt_mut_rep_vs_wt_mut_conn_pvals
+        'wt_mut_rep_vs_wt_mut_conn_pvals':wt_mut_rep_vs_wt_mut_conn_pvals,
+        'mut_wt_rep_c_pvals': mut_wt_rep_c_pvals,
+        'mut_wt_conn_c_pvals': mut_wt_conn_c_pvals,
+        'mut_wt_rep_vs_wt_mut_conn_c_pvals': mut_wt_rep_vs_wt_mut_conn_c_pvals
     }
 
     return ret_val
+
+def predict_mutant_functionality():
+    """ eVIP_predict function """
+
+    pass
 
 def _calculate_self_connectivity(df:pd.DataFrame)->list:
     """ get median values """
