@@ -68,6 +68,8 @@ def calculate_wt_mt_comparison(df: pd.DataFrame, rep_null_dist:list, conn_null_d
         #STEP1: calculate self connectivity and p-value
         df_mt = df.loc[[x.startswith(cell_key) for x in df.index],[x.startswith(cell_key) for x in df.columns]]
         mut_rankpt, mut_rankpt_dist = _calculate_self_connectivity(df_mt)
+
+        # wilcoxon test on Scipy does not generate a same result as in R if sample is too small
         self_pval = wilcoxon(mut_rankpt_dist, [rep_null_dist[0] for _ in mut_rankpt_dist]).pvalue
         mut_rep_pvals.append(self_pval)
 
