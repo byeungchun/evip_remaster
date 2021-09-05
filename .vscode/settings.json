@@ -5,5 +5,7 @@
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestEnabled": true,
-    "python.pythonPath": "C:\\Users\\by003457\\envs\\evip2\\Scripts\\python.exe"
+    "python.pythonPath": "C:\\Users\\by003457\\envs\\evip2\\Scripts\\python.exe",
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true
 }

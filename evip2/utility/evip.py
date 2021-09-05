@@ -55,12 +55,13 @@ def calculate_wildtype_distribution(df: pd.DataFrame, rep_null_dist:list, wt_nam
 def calculate_wt_mt_comparison(df: pd.DataFrame, rep_null_dist:list, conn_null_dist:list, wt_dict: dict, sig_id:dict)->dict:
     """ eVIP Build comparison part """
 
-    mut_rep_pvals = list()
-    mut_wt_conn_pvals = list()
-    mut_wt_rep_pvals = list()
-    wt_mut_rep_vs_wt_mut_conn_pvals = list()
+    # mut_rep_pvals = list()
+    # mut_wt_conn_pvals = list()
+    # mut_wt_rep_pvals = list()
+    # wt_mut_rep_vs_wt_mut_conn_pvals = list()
 
     wt_name = [k for k,v in sig_id.items() if v['type']=='WT'][0]
+    ret_val = {wt_name: dict()}
 
     for cell_key, cell_val in sig_id.items():
         if cell_val['type'] != 'MT':
@@ -72,7 +73,7 @@ def calculate_wt_mt_comparison(df: pd.DataFrame, rep_null_dist:list, conn_null_d
 
         # wilcoxon test on Scipy does not generate a same result as in R if sample is too small
         self_pval = wilcoxon(mut_rankpt_dist, [rep_null_dist[0] for _ in mut_rankpt_dist]).pvalue
-        mut_rep_pvals.append(self_pval)
+        #mut_rep_pvals.append(self_pval)
 
         #STEP2: calculate connectivity and p-value
         df_mt_wt = df.loc[[x.startswith(wt_name) for x in df.index],[x.startswith(cell_key) for x in df.columns]]
@@ -80,38 +81,54 @@ def calculate_wt_mt_comparison(df: pd.DataFrame, rep_null_dist:list, conn_null_d
         mut_wt_conn_dist.extend(list(df_mt_wt.apply(lambda x: np.percentile(x.values, 50), axis=1).values))
         mut_wt_conn_rankpt = np.percentile(mut_wt_conn_dist, 50)
         conn_pval = wilcoxon(mut_wt_conn_dist, [conn_null_dist[0] for _ in mut_wt_conn_dist]).pvalue
-        mut_wt_conn_pvals.append(conn_pval)
+        #mut_wt_conn_pvals.append(conn_pval)
 
         #STEP3: connectivity between mutant self connectivity and wildtype dist.
         mut_wt_rep_pval = wilcoxon(mut_rankpt_dist, wt_dict[wt_name]['wt_rep_dist']).pvalue
-        mut_wt_rep_pvals.append(mut_wt_rep_pval)
+        #mut_wt_rep_pvals.append(mut_wt_rep_pval)
 
         #STEP4: Kruskal test
         wt_mut_rep_vs_wt_mut_conn_pval = kruskal(wt_dict[wt_name]['wt_rep_dist'], mut_rankpt_dist, mut_wt_conn_dist).pvalue
-        wt_mut_rep_vs_wt_mut_conn_pvals.append(wt_mut_rep_vs_wt_mut_conn_pval)
+        #wt_mut_rep_vs_wt_mut_conn_pvals.append(wt_mut_rep_vs_wt_mut_conn_pval)
 
-        #STEP5: calculate corrected pvalues
-        mut_wt_rep_c_pvals = multipletests(mut_wt_rep_pvals, method='fdr_bh')
-        mut_wt_conn_c_pvals = multipletests(mut_wt_conn_pvals, method='fdr_bh')
-        mut_wt_rep_vs_wt_mut_conn_c_pvals = multipletests(mut_wt_rep_vs_wt_mut_conn_pvals, method='fdr_bh')
+        ret_val[wt_name][cell_key] = {
+            'wt_rep': rep_null_dist[0],
+            'mut_rep': mut_rankpt,
+            'mut_rep_pval': self_pval,
+            'mut_wt_conn_pval': conn_pval,
+            'mut_wt_rep_pval': mut_wt_rep_pval,
+            'wt_mut_rep_vs_wt_mut_conn_pval':wt_mut_rep_vs_wt_mut_conn_pval,
+        }
 
+    mut_wt_rep_pvals = [mut_val['mut_wt_rep_pval'] for mut_val in ret_val[wt_name].values()]
+    mut_wt_conn_pvals = [mut_val['mut_wt_conn_pval'] for mut_val in ret_val[wt_name].values()]
+    wt_mut_rep_vs_wt_mut_conn_pvals = [mut_val['wt_mut_rep_vs_wt_mut_conn_pval'] for mut_val in ret_val[wt_name].values()]
 
-    ret_val = {
-        'mut_rep_pvals': mut_rep_pvals,
-        'mut_wt_conn_pvals': mut_wt_conn_pvals,
-        'mut_wt_rep_pvals': mut_wt_rep_pvals,
-        'wt_mut_rep_vs_wt_mut_conn_pvals':wt_mut_rep_vs_wt_mut_conn_pvals,
-        'mut_wt_rep_c_pvals': mut_wt_rep_c_pvals,
-        'mut_wt_conn_c_pvals': mut_wt_conn_c_pvals,
-        'mut_wt_rep_vs_wt_mut_conn_c_pvals': mut_wt_rep_vs_wt_mut_conn_c_pvals
-    }
+    #STEP5: calculate corrected pvalues
+    for i, mut_val in enumerate(ret_val[wt_name].values()):
+        mut_val.update({'mut_wt_rep_c_pvals': multipletests(mut_wt_rep_pvals, method='fdr_bh')[1][i]})
+        mut_val.update({'mut_wt_conn_c_pvals': multipletests(mut_wt_conn_pvals, method='fdr_bh')[1][i]})
+        mut_val.update({'mut_wt_rep_vs_wt_mut_conn_c_pvals': multipletests(wt_mut_rep_vs_wt_mut_conn_pvals, method='fdr_bh')[1][i]})
 
     return ret_val
 
-def predict_mutant_functionality():
+def predict_mutant_functionality(
+    res_comp:dict,
+    mut_wt_thresh:float=0.1,
+    mut_wt_rep_diff:float=0.0,
+    c_thresh:float=0.1,
+    disting_thresh:float=0.1,
+    cond_median_max_diff_thresh:float=0.2
+):
     """ eVIP_predict function """
 
-    pass
+    wt_name = list(res_comp.keys())[0]
+    
+    # for mut_key, mut_val in res_comp[wt_name].items():
+
+
+    return True
+    
 
 def _calculate_self_connectivity(df:pd.DataFrame)->list:
     """ get median values """

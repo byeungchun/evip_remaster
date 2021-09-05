@@ -4,7 +4,8 @@ import pandas as pd
 from evip2.utility.evip import (
     calculate_null_distribution,
     calculate_wildtype_distribution,
-    calculate_wt_mt_comparison
+    calculate_wt_mt_comparison,
+    predict_mutant_functionality
 )
 
 sig_id = {
@@ -45,5 +46,9 @@ def test_calculate_wt_mt_comparison():
     wt_dict, wt_rep_pvals, wt_allele_ordered = calculate_wildtype_distribution(df, rep_null_dist, 'RNF43_WT')
 
     ret_comp = calculate_wt_mt_comparison(df, rep_null_dist, conn_null_dist, wt_dict, sig_id)
+
+    assert True
+
+    ret_pred = predict_mutant_functionality(ret_comp)
 
     assert True
