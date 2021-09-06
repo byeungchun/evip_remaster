@@ -139,11 +139,11 @@ def predict_mutant_functionality(
         if use_c_pval:
             mut_wt_rep_pval = mut_val['mut_wt_rep_c_pvals']
             mut_wt_conn_pval = mut_val['mut_wt_conn_c_pvals']
-            disting_pval = mut_val['wt_mut_rep_vs_wt_mut_conn_c_pvals']
+            disting_pval = mut_val['mut_wt_rep_vs_wt_mut_conn_c_pvals']
         else:
             mut_wt_rep_pval = mut_val['mut_wt_rep_pval']
             mut_wt_conn_pval = mut_val['mut_wt_conn_pval']
-            disting_pval = mut_val['wt_mut_rep_vs_wt_mut_conn_pval']
+            disting_pval = mut_val['mut_wt_rep_vs_wt_mut_conn_pval']
 
 
         res_comp[wt_name][mut_key]['prediction'] = _get_prediction_6(
